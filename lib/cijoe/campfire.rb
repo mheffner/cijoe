@@ -2,7 +2,7 @@ class CIJoe
   module Campfire
     def self.activate
       if valid_config?
-        require 'tinder'
+        require 'broach'
 
         CIJoe::Build.class_eval do
           include CIJoe::Campfire
@@ -13,8 +13,7 @@ class CIJoe
         puts "Can't load Campfire notifier."
         puts "Please add the following to your project's .git/config:"
         puts "[campfire]"
-        puts "\tuser = your@campfire.email"
-        puts "\tpass = passw0rd"
+        puts "\ttoken = 12345abcd"
         puts "\tsubdomain = whatever"
         puts "\troom = Awesomeness"
         puts "\tssl = false"
@@ -24,23 +23,30 @@ class CIJoe
     def self.config
       @config ||= {
         :subdomain => Config.campfire.subdomain.to_s,
-        :user      => Config.campfire.user.to_s,
-        :pass      => Config.campfire.pass.to_s,
+        :token      => Config.campfire.token.to_s,
         :room      => Config.campfire.room.to_s,
         :ssl       => Config.campfire.ssl.to_s.strip == 'true'
       }
     end
 
     def self.valid_config?
-      %w( subdomain user pass room ).all? do |key|
+      %w( subdomain token room ).all? do |key|
         !config[key.intern].empty?
       end
     end
 
     def notify
-      room.speak "#{short_message}. #{commit.url}"
-      room.paste full_message if failed?
-      room.leave
+      config = Campfire.config
+      Broach.settings = {
+        'account' => config[:subdomain],
+        'token' => config[:token],
+        'use_ssl' => config[:ssl] ? true : false
+      }
+
+      Broach.speak(config[:room], "#{short_message}. #{commit.url}")
+      #room.speak "#{short_message}. #{commit.url}"
+      #room.paste full_message if failed?
+      #room.leave
     end
 
   private
