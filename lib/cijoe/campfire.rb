@@ -43,7 +43,11 @@ class CIJoe
         'use_ssl' => config[:ssl] ? true : false
       }
 
-      Broach.speak(config[:room], "#{short_message}. #{commit.url}")
+      # Only complain if failed
+      # XXX: yes this is lame, but we should we really only announce a
+      # successful build if the repo changed.
+      #
+      Broach.speak(config[:room], "#{short_message}. #{commit.url}") if failed?
       #room.speak "#{short_message}. #{commit.url}"
       #room.paste full_message if failed?
       #room.leave
